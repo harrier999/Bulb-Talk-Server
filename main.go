@@ -37,7 +37,7 @@ func main() {
 	// r.HandleFunc("/signup", signup(db)).Methods("POST")
 	// r.HandleFunc("/login", login(db)).Methods("POST")
 	r.HandleFunc("/chat", chatting.Handler).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8000", r))
+	log.Fatal(http.ListenAndServe(":18000", r))
 }
 
 type UserError struct {
