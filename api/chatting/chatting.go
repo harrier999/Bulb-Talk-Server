@@ -36,10 +36,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Header.Get("user_id")
 	log.Println("new connection from ", user_id)
 	log.Println("room_id is ", room_id)
+
 	if connections[room_id] == nil{
 		connections[room_id] = make(map[string]*websocket.Conn)
 		log.Println("creating new room")
 	}
+	
 	connections[room_id][user_id] = conn
 	defer closeConnection(room_id, user_id)
 
