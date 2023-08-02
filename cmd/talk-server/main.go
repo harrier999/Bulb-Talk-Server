@@ -25,17 +25,9 @@ type User struct {
 
 
 func main() {
-	// db, err := gorm.Open("postgres", "postgresql://nice:epqmdhqtm@141.164.50.18:5432/nice?sslmode=disable")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer db.Close()
 
-	// db.AutoMigrate(&User{})
 
 	r := mux.NewRouter()
-	// r.HandleFunc("/signup", signup(db)).Methods("POST")
-	// r.HandleFunc("/login", login(db)).Methods("POST")
 	r.HandleFunc("/chat", chatting.Handler).Methods("GET")
 	log.Fatal(http.ListenAndServe(":18000", r))
 }
