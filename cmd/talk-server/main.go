@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"server/chatting"
+	"server/api/chatting"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
