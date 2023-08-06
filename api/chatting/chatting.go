@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"encoding/json"
+
 	"github.com/gorilla/websocket"
 
 	//"github.com/jinzhu/gorm"
@@ -92,61 +94,89 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetChattingHistory(room_id int, last_message_id int) {
-	return 
+func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) ([]string, error) {
+	chattingHistory := redisDB.LRange(ctx, "room_id:"+string(room_id), last_message_id, -1)
 
+	if chattingHistory.Err() != nil {
+		log.Println(chattingHistory.Err())
+		return nil, chattingHistory.Err()
+	}
+	return chattingHistory.Val(), nil
 }
+
+func redisListToMessageList(redisList []string) []Chat {
+	var messageList []Chat
+	var chat map[string]interface{}
+
+	for _, msg := range redisList {
+		err := json.Unmarshal([]byte(msg), &chat)
+		if err != nil{
+			return messageList
+			// TODO
+		}
+		switch chat["type"] {
+		case "text":
+			json.Marshal(msg)
+			
+		}
+
+	}
+	return messageList
+}
+
 
 type User struct {
-	Id string `json:"id"`
-	UserName string `json:"firstName"`
-	ProfileImage string `json:"imageUrl"`
+	Id string `json:"id"` 
+	// UserName string `json:"firstName"`
+	// ProfileImage string `json:"imageUrl"`
 }
-
-type Message struct {
+type Chat interface {
+	GetMessageType() string
+	ToJson() string
+	FromJson(string)
+}
+type BaseChat struct {
 	Id string `json:"id"`
 	RoomId string `json:"roomId"`
 	Type string `json:"type"`
 	Author User `json:"author"`
 }
-type Messenger interface {
-	GetMessageType() string
-	ToJson() string
-	FromJson(string)
-}
-type TextMessage struct {
-	Message
+type TextChat struct {
+	BaseChat
 	Text string `json:"text"`
 }
-// type ImageMessage struct {
-// 	Message
+type Message struct{
+	Message string `json:"MessageType"`
+	Payload json.RawMessage `json:"payload"`
+} 
+// type ImageChat struct {
+// 	BaseChat
 // 	ImageUrl string `json:"uri"`
 // 	Name string `json:"name"`
 // 	Size int `json:"size"`
 // }
-// type Request struct{
-// 	RequestType string `json:"requestType"`
-// 	Playload map[string]json.RawMessage `json:"playload"`
-// } 
 
-// type Wrapper interface {
-// 	GetRequestType() string
-// 	FromJson(string)
-// 	CreateResponse() string
-// }
-// type Response{
 
-// }
-	
+func jsonToMessage (jsonString string) Message{
+	var message Message
+	json.Unmarshal([]byte(jsonString), &message)
+	return message
+}
+func MessageToJson(message Message) string{
+	jsonString, _ := json.Marshal(message)
+	return string(jsonString)
+}
+func (t *TextChat) GetMessageType() string{
+	return "text"
+}
+func (t *TextChat) ToJson() string{
+	jsonString, _ := json.Marshal(t)
+	return string(jsonString)
+}
+func (t *TextChat) FromJson(data json.RawMessage){
+	json.Unmarshal([]byte(data), &t)
+}
 
-// type ChattingScoket struct {
 
-	
 
-// }
 
-// type userInfo struct {
-// 	gorm.Model
-// 	Username string `json:"username"`
-
-// }
