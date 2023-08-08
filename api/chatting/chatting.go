@@ -4,8 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
-
 	"encoding/json"
+
+	"server/internal/models/message"
 
 	"github.com/gorilla/websocket"
 
@@ -33,11 +34,6 @@ func closeConnection(room_id string, user_id string){
 var connections = make(map[string]map[string]*websocket.Conn)
 var ctx context.Context
 var redisDB *redis.Client
-
-// func Init() {
-// 	ctx = db.GetContext()
-// 	redisDB = db.GetRedisClient()
-// }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	ctx = db.GetContext()
@@ -104,8 +100,8 @@ func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Cl
 	return chattingHistory.Val(), nil
 }
 
-func redisListToMessageList(redisList []string) []Chat {
-	var messageList []Chat
+func redisListToMessageList(redisList []string) []message.Message {
+	var messageList []message.Message
 	var chat map[string]interface{}
 
 	for _, msg := range redisList {
@@ -125,57 +121,6 @@ func redisListToMessageList(redisList []string) []Chat {
 }
 
 
-type User struct {
-	Id string `json:"id"` 
-	// UserName string `json:"firstName"`
-	// ProfileImage string `json:"imageUrl"`
-}
-type Chat interface {
-	GetMessageType() string
-	ToJson() string
-	FromJson(string)
-}
-type BaseChat struct {
-	Id string `json:"id"`
-	RoomId string `json:"roomId"`
-	Type string `json:"type"`
-	Author User `json:"author"`
-}
-type TextChat struct {
-	BaseChat
-	Text string `json:"text"`
-}
-type Message struct{
-	Message string `json:"MessageType"`
-	Payload json.RawMessage `json:"payload"`
-} 
-// type ImageChat struct {
-// 	BaseChat
-// 	ImageUrl string `json:"uri"`
-// 	Name string `json:"name"`
-// 	Size int `json:"size"`
-// }
-
-
-func jsonToMessage (jsonString string) Message{
-	var message Message
-	json.Unmarshal([]byte(jsonString), &message)
-	return message
-}
-func MessageToJson(message Message) string{
-	jsonString, _ := json.Marshal(message)
-	return string(jsonString)
-}
-func (t *TextChat) GetMessageType() string{
-	return "text"
-}
-func (t *TextChat) ToJson() string{
-	jsonString, _ := json.Marshal(t)
-	return string(jsonString)
-}
-func (t *TextChat) FromJson(data json.RawMessage){
-	json.Unmarshal([]byte(data), &t)
-}
 
 
 
