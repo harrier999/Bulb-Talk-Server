@@ -63,13 +63,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// for _, msg := range chattingHistory.Val() {
 	// 	conn.WriteMessage(websocket.TextMessage, []byte(msg))
 	// }
-	redisList, err := GetChattingHistory(room_id, 0, redisDB)
-	if err != nil {
-		log.Println(err)
-		log.Println("error in getting chatting history from redis")
-		return
-	}
-	messageList, err := redisListToMessageList(redisList)
+	messageList, err := GetChattingHistory(room_id, 0, redisDB)
 	if err != nil {
 		log.Println(err)
 		log.Println("error in converting redis list to message list")
@@ -115,7 +109,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) ([]string, error) {
+func GetChattingHistoryFromRedis(room_id string, last_message_id int64, redisDB *redis.Client) ([]string, error) {
 	chattingHistory := redisDB.LRange(ctx, "room_id:"+string(room_id), last_message_id, -1)
 
 	if chattingHistory.Err() != nil {
@@ -155,4 +149,21 @@ func redisListToMessageList(redisList []string) ([]message.Message, error) {
 
 	}
 	return messageList, nil
+}
+
+func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) ([]message.Message, error){
+	chattingHistoryRaw, err := GetChattingHistoryFromRedis(room_id, last_message_id, redisDB)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in getting chatting history from redis")
+		return nil, err
+	}
+	chattingHistory, err := redisListToMessageList(chattingHistoryRaw)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in converting redis list to message list")
+		return nil, err
+	}
+	return chattingHistory, err
+	
 }
