@@ -11,17 +11,15 @@ import (
 )
 
 type User struct {
-	UserId       uint   `gorm:"primary_key;auto_increment" json:"user_id"`
-	Username     string `json:"username"`
-	ProfileImage string `json:"profile_image"`
-	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	UserId       uint      `gorm:"primary_key;auto_increment" json:"user_id"`
+	Username     string    `json:"username"`
+	ProfileImage string    `json:"profile_image"`
+	CreatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
 type UserError struct {
 	Message string `json:"message"`
 }
-
-
 
 // func signup(db *gorm.DB) func(w http.ResponseWriter, r *http.Request) {
 // 	return func(w http.ResponseWriter, r *http.Request) {
