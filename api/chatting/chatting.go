@@ -3,9 +3,11 @@ package chatting
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
+	"server/internal/models"
 	"server/internal/models/message"
 
 	"github.com/gorilla/websocket"
@@ -22,13 +24,13 @@ var upgrader = websocket.Upgrader{
 }
 
 func closeConnection(room_id string, user_id string) {
+
 	connections[room_id][user_id].Close()
 	delete(connections[room_id], user_id)
 	log.Println("Closing connection from user ", user_id, "room ", room_id)
 	if len(connections[room_id]) == 0 {
 		delete(connections, room_id)
 	}
-
 }
 
 var connections = make(map[string]map[string]*websocket.Conn)
@@ -56,11 +58,40 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	connections[room_id][user_id] = conn
 	defer closeConnection(room_id, user_id)
 
-	chattingHistory := redisDB.LRange(ctx, "room_id:"+room_id, 0, -1)
+	//chattingHistory := redisDB.LRange(ctx, "room_id:"+room_id, 0, -1)
 
-	for _, msg := range chattingHistory.Val() {
-		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	// for _, msg := range chattingHistory.Val() {
+	// 	conn.WriteMessage(websocket.TextMessage, []byte(msg))
+	// }
+	redisList, err := GetChattingHistory(room_id, 0, redisDB)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in getting chatting history from redis")
+		return
 	}
+	messageList, err := redisListToMessageList(redisList)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in converting redis list to message list")
+		return
+	}
+	messageListWithSeq := message.MessageList{FirstSeq: 0, LastSeq: int64(len(messageList)), Messages: messageList}
+	jsonString, err := json.Marshal(messageListWithSeq)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in converting message list to json")
+		return
+	}
+	event := models.Event{MessageType: "messageList", Payload: jsonString}
+	json, err := json.Marshal(event)
+	if err != nil {
+		log.Println(err)
+		log.Println("error in converting event to json")
+		return
+	}
+
+	conn.WriteMessage(websocket.TextMessage, json)
+	log.Println(string(json))
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -68,6 +99,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+		log.Println(string(msg))
 		redisDB.RPush(ctx, "room_id:"+room_id, string(msg))
 		log.Println("New Message!")
 		log.Println(string(msg))
@@ -80,9 +112,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-
 	}
-
 }
 
 func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) ([]string, error) {
@@ -97,24 +127,31 @@ func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Cl
 
 func redisListToMessageList(redisList []string) ([]message.Message, error) {
 	var messageList []message.Message
-	var chat map[string]json.RawMessage
-	var textMessage message.TextMessage
-	//var imageMessage message.ImageMessage
-	var message message.Message
+	var singleMessage message.Message
+	type typer struct {
+		Type string `json:"type"`
+	}
+	var t typer
 
 	for _, msg := range redisList {
-		err := json.Unmarshal([]byte(msg), &chat)
+		err := json.Unmarshal([]byte(msg), &t)
 		if err != nil {
 			return nil, err
 		}
-		switch string(chat["type"]) {
+
+		switch t.Type {
 		case "text":
-			err = json.Unmarshal([]byte(msg), &textMessage)
-			messageList = append(messageList, &textMessage)
+			singleMessage = &message.TextMessage{}
 		case "image":
-			err = json.Unmarshal([]byte(msg), &message)
-			messageList = append(messageList, message)
+			singleMessage = &message.ImageMessage{}
+		default:
+			log.Println("error in getting message type")
+			log.Println("error is ", t.Type)
+			return nil, errors.New("error in getting message type")
 		}
+		singleMessage.FromJson([]byte(msg))
+		messageList = append(messageList, singleMessage)
+		log.Println(singleMessage)
 
 	}
 	return messageList, nil
