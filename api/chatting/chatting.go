@@ -58,7 +58,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	connections[room_id][user_id] = conn
 	defer closeConnection(room_id, user_id)
 
-
 	chattingHistory, err := GetChattingHistory(room_id, 0, redisDB)
 	if err != nil {
 		log.Println(err)
@@ -139,7 +138,7 @@ func redisListToMessageList(redisList []string) ([]message.Message, error) {
 	return messageList, nil
 }
 
-func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) (json.RawMessage, error){
+func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Client) (json.RawMessage, error) {
 	chattingHistoryRaw, err := GetChattingHistoryFromRedis(room_id, last_message_id, redisDB)
 	if err != nil {
 		log.Println(err)
@@ -167,5 +166,5 @@ func GetChattingHistory(room_id string, last_message_id int64, redisDB *redis.Cl
 		return nil, err
 	}
 	return json, nil
-	
+
 }
