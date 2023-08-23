@@ -8,3 +8,9 @@ type User struct {
 	phone_number  string
 	country_code  string
 }
+
+type JoinRoom struct {
+	room_id string
+	user_id string
+	message_id string
+}
