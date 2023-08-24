@@ -1,18 +1,19 @@
 package db
 
 import (
-	redis "github.com/redis/go-redis/v9"
-	"os"
 	"context"
 	"log"
+	"os"
 	"sync"
+
+	redis "github.com/redis/go-redis/v9"
 )
 
 var ctx = context.Background()
 var redisDB *redis.Client
 var once sync.Once
 
-func GetRedisClient() *redis.Client {
+func GetChattingHistoryClient() *redis.Client {
 	once.Do(func() {
 		log.Println("Connecting to redis...")
 		redis_addr := os.Getenv("REDIS_ADDR")

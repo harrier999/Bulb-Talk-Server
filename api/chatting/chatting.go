@@ -39,7 +39,7 @@ var redisDB *redis.Client
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	ctx = db.GetContext()
-	redisDB = db.GetRedisClient()
+	redisDB = db.GetChattingHistoryClient()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
