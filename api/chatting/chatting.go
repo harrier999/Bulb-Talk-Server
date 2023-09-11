@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	//"github.com/jinzhu/gorm"
-	"server/internal/db"
+	"server/internal/db/redis_db"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -38,8 +38,8 @@ var ctx context.Context
 var redisDB *redis.Client
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	ctx = db.GetContext()
-	redisDB = db.GetChattingHistoryClient()
+	ctx = redis_db.GetContext()
+	redisDB = redis_db.GetChattingHistoryClient()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
