@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
-	"server/api/chatting"
+	"server/internal/handler/chatting"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
