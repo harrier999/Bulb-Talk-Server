@@ -11,7 +11,7 @@ type User struct {
 	UserID       uuid.UUID      `gorm:"primaryKey; type:uuid; not null; default:gen_random_uuid()"`
 	UserName     string         `gorm:"type:varchar(40);not null"`
 	PasswordHash string         `gorm:"type:varchar(255);not null"`
-	Salt		 string         `gorm:"type:varchar(255);not null"`
+	Salt         string         `gorm:"type:varchar(255);not null"`
 	ProfileImage sql.NullString `gorm:"type:varchar(255)"`
 	PhoneNumber  string         `gorm:"type:varchar(24);not null"`
 	CountryCode  string         `gorm:"type:varchar(8);not null"`
@@ -44,9 +44,9 @@ type RoomUserList struct {
 }
 
 type AuthenticateMessage struct {
-	ID uint `gorm:"primarykey"`
-	PhoneNumber string `gorm:"type:varchar(24);not null"`
-	RequestTime time.Time `gorm:"type:timestamp;not null;default:now()"`
-	DeviceID string `gorm:"type:varchar(24); not null"`
-	AuthenticateNumber string `gorm:"type:varchar(8);not null"`
+	ID                 uint      `gorm:"primarykey"`
+	PhoneNumber        string    `gorm:"type:varchar(24);not null"`
+	RequestTime        time.Time `gorm:"type:timestamp;not null;default:now()"`
+	DeviceID           string    `gorm:"type:varchar(24); not null"`
+	AuthenticateNumber string    `gorm:"type:varchar(8);not null"`
 }
