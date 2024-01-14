@@ -8,12 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 	"sync"
+	"time"
 )
 
-
 func SendSMS(phone_number string, message string) error {
+	log.Println("Sending SMS to " + phone_number)
 	token := getTokenManager().getToken()
 	err := sendSMS(token, phone_number, message)
 	if err != nil {
@@ -22,13 +22,12 @@ func SendSMS(phone_number string, message string) error {
 	return nil
 }
 
-
 var (
 	SMS_API_KEY      string
 	SMS_ID           string
 	SMS_PHONE_NUMBER string
-	once			 sync.Once
-	tm	 *tokenManager
+	once             sync.Once
+	tm               *tokenManager
 )
 
 func init() {
@@ -54,6 +53,7 @@ func getTokenManager() *tokenManager {
 		if err != nil {
 			log.Fatal("Failed to get initial token")
 		}
+		log.Println("Successfully got initial token")
 		tm.tokenChannel <- initialToken
 		tm.startRefreshRoutine(50 * time.Minute)
 	})
@@ -71,9 +71,9 @@ func (tm *tokenManager) startRefreshRoutine(refreshInterval time.Duration) {
 	go func() {
 		n := 0
 		for {
-			time.Sleep(time.Duration(n * n) * time.Second)
-			
-			newToken, err := requestToken() 
+			time.Sleep(time.Duration(n*n) * time.Second)
+
+			newToken, err := requestToken()
 			if err != nil {
 				if n > 9 {
 					log.Fatal("Failed to refresh token")
@@ -85,8 +85,8 @@ func (tm *tokenManager) startRefreshRoutine(refreshInterval time.Duration) {
 			}
 			n = 0
 			var _ string
-			_ = <- tm.tokenChannel // Throw away old token
-			tm.tokenChannel <- newToken  
+			_ = <-tm.tokenChannel // Throw away old token
+			tm.tokenChannel <- newToken
 			time.Sleep(refreshInterval)
 		}
 	}()
@@ -127,7 +127,7 @@ func requestToken() (string, error) {
 	return string(a.AccessToken), nil
 }
 
-func sendSMS(token string, phone_number string, message string)  error {
+func sendSMS(token string, phone_number string, message string) error {
 	url := "https://sms.gabia.com/api/send/sms"
 
 	client := &http.Client{
@@ -152,4 +152,3 @@ func sendSMS(token string, phone_number string, message string)  error {
 	log.Println("Successfully Sent SMS to " + phone_number)
 	return nil
 }
-

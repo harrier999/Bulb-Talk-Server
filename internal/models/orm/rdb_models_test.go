@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMigration(t *testing.T){
+
+
+func TestMigration(t *testing.T) {
 	err := godotenv.Load("../../../cmd/talk-server/.env")
 	if err != nil {
 		t.Errorf("Error loading .env file")
@@ -18,17 +20,17 @@ func TestMigration(t *testing.T){
 	if db == nil {
 		t.Errorf("Expected db to be not nil")
 	}
-	db.AutoMigrate(&orm.RoomList{})
-	room1 := orm.RoomList{}
+	db.AutoMigrate(&orm.Room{})
+	room1 := orm.Room{}
 	room1.RoomName = "test_room1"
-	room2 := orm.RoomList{}
+	room2 := orm.Room{}
 	room2.RoomName = "test_room2"
 	db.Create(&room1)
 	db.Create(&room2)
 
-	room3 := orm.RoomList{}
+	room3 := orm.Room{}
 	room3.RoomID = room1.RoomID
-	room4 := orm.RoomList{}
+	room4 := orm.Room{}
 	room4.RoomID = room2.RoomID
 
 	db.First(&room3)
@@ -38,8 +40,7 @@ func TestMigration(t *testing.T){
 	defer db.Delete(&room2)
 
 	assert.Equal(t, room1, room3)
-	assert.Equal(t,room2, room4)
-
+	assert.Equal(t, room2, room4)
 
 	// roomList := []orm.RoomList{}
 	// db.Find(&roomList).Scan(&roomList)
@@ -47,7 +48,5 @@ func TestMigration(t *testing.T){
 	// 	t.Logf("Room: %s", room.RoomID.String())
 	// 	fmt.Printf("Room: %s\n", room.RoomID.String())
 	// }
-
-
 
 }
