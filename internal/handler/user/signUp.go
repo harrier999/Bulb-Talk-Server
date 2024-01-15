@@ -80,7 +80,7 @@ func validUserData(userData UserData) error {
 		return errors.New("invalid phone number")
 	}
 	if userData.CountryCode != "82" {
-		return errors.New("Korean phone number only")
+		return errors.New("korean phone number only")
 	}
 	return nil
 }
