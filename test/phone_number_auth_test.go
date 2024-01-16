@@ -36,7 +36,7 @@ func TestReqeustAuthNumber(t *testing.T) {
 	req2 := httptest.NewRequest("POST", "/auth", bytes.NewBuffer(reqBody))
 	rr2 := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(user.ReqeustAuthNumber)
+	handler := http.HandlerFunc(user.RequestAuthNumber)
 	handler.ServeHTTP(rr, req)
 	defer db.Delete(&orm.AuthenticateMessage{}, "device_id = ?", requestData.DeviceID)
 	if status := rr.Code; status != http.StatusOK {
@@ -61,7 +61,7 @@ func TestCheckAuthNumber(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/auth", bytes.NewBuffer(reqBody))
 	res := httptest.NewRecorder()
-	handler := http.HandlerFunc(user.ReqeustAuthNumber)
+	handler := http.HandlerFunc(user.RequestAuthNumber)
 	handler.ServeHTTP(res, req)
 	if status := res.Code; status != http.StatusOK {
 		t.Errorf("Failed to get auth message. Status code: %d", status)

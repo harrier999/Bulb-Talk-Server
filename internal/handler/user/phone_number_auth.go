@@ -22,7 +22,7 @@ type AuthRequest struct {
 	AuthenticateNumber string `json:"authenticate_number"`
 }
 
-func ReqeustAuthNumber(w http.ResponseWriter, r *http.Request) {
+func RequestAuthNumber(w http.ResponseWriter, r *http.Request) {
 	var authData AuthRequest
 	var err error
 	json.NewDecoder(r.Body).Decode(&authData)
@@ -42,7 +42,7 @@ func ReqeustAuthNumber(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	err = utils.SendSMS(authData.PhoneNumber, "Bulb Talk \n인증번호는 [" +authData.AuthenticateNumber +"] 입니다.")
+	err = utils.SendSMS(authData.PhoneNumber, "Bulb Talk \n인증번호는 ["+authData.AuthenticateNumber+"] 입니다.")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
@@ -129,7 +129,6 @@ func checkIfAlreadyRequested(authData AuthRequest) error {
 	}
 	return errors.New("already requested auth number. please wait 3 minutes")
 }
-
 
 func createRandomNumber() (string, error) {
 	var randomNumber *big.Int
