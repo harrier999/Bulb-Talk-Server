@@ -15,7 +15,7 @@ import (
 	"github.com/ttacon/libphonenumber"
 )
 
-type authRequest struct {
+type AuthRequest struct {
 	PhoneNumber        string `json:"phone_number"`
 	CountryCode        string `json:"country_code"`
 	DeviceID           string `json:"device_id"`
@@ -23,32 +23,36 @@ type authRequest struct {
 }
 
 func ReqeustAuthNumber(w http.ResponseWriter, r *http.Request) {
-	var authData authRequest
+	var authData AuthRequest
 	var err error
 	json.NewDecoder(r.Body).Decode(&authData)
 	if err := validAuthData(authData); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		log.Println(err)
 		return
 	}
 	authData.AuthenticateNumber, err = createRandomNumber()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	if err := storeAuthNumber(authData); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusConflict)
+		log.Println(err)
 		return
 	}
 	err = utils.SendSMS(authData.PhoneNumber, "Bulb Talk \n인증번호는 [" +authData.AuthenticateNumber +"] 입니다.")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
 func CheckAuthNumber(w http.ResponseWriter, r *http.Request) {
-	var authData authRequest
+	var authData AuthRequest
 	json.NewDecoder(r.Body).Decode(&authData)
 
 	if err := validAuthData(authData); err != nil {
@@ -58,10 +62,10 @@ func CheckAuthNumber(w http.ResponseWriter, r *http.Request) {
 
 	postgresClient := postgres_db.GetPostgresClient()
 	var authenticateNumber orm.AuthenticateMessage
-	result := postgresClient.Where("DeviceID = ? AND ExpireTime > ? AND PhoneNumber = ? AND ", authData.DeviceID, time.Now(), authData.PhoneNumber).First(&authenticateNumber)
+	result := postgresClient.Where("device_id = ? AND expire_time > ? AND phone_number = ?", authData.DeviceID, time.Now(), authData.PhoneNumber).First(&authenticateNumber)
 	if result.Error != nil {
 		if result.Error.Error() == "record not found" {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 		log.Println("Error checking auth number: ", result.Error.Error())
@@ -69,13 +73,13 @@ func CheckAuthNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if authenticateNumber.AuthenticateNumber != authData.AuthenticateNumber {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func validAuthData(authData authRequest) error {
+func validAuthData(authData AuthRequest) error {
 	if authData.PhoneNumber == "" || authData.CountryCode == "" || authData.DeviceID == "" {
 		return errors.New("invalid auth data")
 	}
@@ -88,7 +92,7 @@ func validAuthData(authData authRequest) error {
 	return nil
 }
 
-func storeAuthNumber(authData authRequest) error {
+func storeAuthNumber(authData AuthRequest) error {
 	postgresClient := postgres_db.GetPostgresClient()
 	var authenticateNumber orm.AuthenticateMessage
 
@@ -112,10 +116,10 @@ func storeAuthNumber(authData authRequest) error {
 	return nil
 }
 
-func checkIfAlreadyRequested(authData authRequest) error {
+func checkIfAlreadyRequested(authData AuthRequest) error {
 	postgresClient := postgres_db.GetPostgresClient()
 	var authenticateNumber orm.AuthenticateMessage
-	result := postgresClient.Where("DeviceID = ? AND ExpireTime < ?", authData.DeviceID, time.Now()).First(&authenticateNumber)
+	result := postgresClient.Where("device_id = ? AND expire_time > ?", authData.DeviceID, time.Now()).First(&authenticateNumber)
 	if result.Error != nil {
 		if result.Error.Error() == "record not found" {
 			return nil
