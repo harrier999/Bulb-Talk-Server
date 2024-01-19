@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	gorm.Model
+	UserID       uuid.UUID      `gorm:"primaryKey; type:uuid; not null; default:gen_random_uuid()"`
 	UserName     string         `gorm:"type:varchar(40);not null"`
 	PasswordHash string         `gorm:"type:varchar(255);not null"`
 	ProfileImage sql.NullString `gorm:"type:varchar(255)"`
@@ -17,6 +17,9 @@ type User struct {
 	CountryCode  string         `gorm:"type:varchar(8);not null"`
 	Email        sql.NullString `gorm:"type:varchar(64)"`
 	OauthID      sql.NullString `gorm:"type:varchar(255)"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
 type DeviceList struct {
