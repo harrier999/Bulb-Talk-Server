@@ -18,7 +18,7 @@ func TestJWTMiddleware(t *testing.T) {
 	m := mux.NewRouter()
 	m.Use(JWTMiddleware)
 	m.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		user_id := r.Context().Value(contextKeyUserID)
+		user_id := r.Context().Value(ContextKeyUserID)
 		assert.NotNil(t, user_id)
 		assert.Equal(t, "test_user_id", user_id)
 
