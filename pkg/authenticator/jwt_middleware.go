@@ -1,16 +1,17 @@
 package authenticator
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"context"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
-const contextKeyUserID contextKey = "user_id"
+
+const ContextKeyUserID contextKey = "user_id"
 
 var hmacSecret = []byte(os.Getenv("JWT_SECRET"))
 
@@ -36,7 +37,7 @@ func JWTMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), contextKeyUserID, user_id)
+		ctx := context.WithValue(r.Context(), ContextKeyUserID, user_id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
