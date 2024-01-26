@@ -2,15 +2,13 @@ package friends
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
-	"os"
 	"server/internal/db/postgres_db"
 	"server/internal/models/orm"
 	"server/pkg/authenticator"
+	"server/pkg/log"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,20 +21,14 @@ type FriendListResponse struct {
 }
 
 func GetFriendList(w http.ResponseWriter, r *http.Request) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := log.NewColorLog()
 
-	user_id, ok := r.Context().Value(authenticator.ContextKeyUserID).(string)
-	if !ok {
-		logger.Warn("Error while parsing user_id", "user_id", user_id)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if !IsValidUUID(user_id) {
-		logger.Warn("User id is invalid UUID", "user_id", user_id)
+	user_id, err := authenticator.GetUserID(r)
+	if err != nil {
+		logger.Warn("Error while getting user_id from context")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
 	friendList, err := getFriendListDB(user_id)
 	if err != nil {
 		logger.Warn("Error while getting friend list", "user_id", user_id)
@@ -50,11 +42,6 @@ func GetFriendList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-}
-
-func IsValidUUID(u string) bool {
-	_, err := uuid.Parse(u)
-	return err == nil
 }
 
 func getFriendListDB(user_id string) ([]orm.Friend, error) {
