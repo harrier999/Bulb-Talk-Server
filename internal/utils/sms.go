@@ -99,6 +99,7 @@ func requestToken() (string, error) {
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Timeout: 2 * time.Second,
 	}
 
 	payload := bytes.NewBuffer([]byte(`grant_type=client_credentials`))
@@ -134,6 +135,7 @@ func sendSMS(token string, phone_number string, message string) error {
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
+		Timeout: 2 * time.Second,
 	}
 	payload := bytes.NewBuffer([]byte(`phone=` + phone_number + `&callback=` + SMS_PHONE_NUMBER + `&message=` + message + `&refkey=` + `[[hello]`))
 	req, err := http.NewRequest("POST", url, payload)
