@@ -94,15 +94,14 @@ func validAuthData(authData AuthRequest) error {
 
 func storeAuthNumber(authData AuthRequest) error {
 	postgresClient := postgres_db.GetPostgresClient()
-	var authenticateNumber orm.AuthenticateMessage
-
-	authenticateNumber.CountryCode = authData.CountryCode
-	authenticateNumber.PhoneNumber = authData.PhoneNumber
-	authenticateNumber.DeviceID = authData.DeviceID
-	authenticateNumber.AuthenticateNumber = authData.AuthenticateNumber
-	authenticateNumber.RequestTime = time.Now()
-	authenticateNumber.ExpireTime = time.Now().Add(time.Minute * 3)
-
+	authenticateNumber := orm.AuthenticateMessage{
+		PhoneNumber:        authData.PhoneNumber,
+		CountryCode:        authData.CountryCode,
+		DeviceID:           authData.DeviceID,
+		AuthenticateNumber: authData.AuthenticateNumber,
+		RequestTime:        time.Now(),
+		ExpireTime:         time.Now().Add(time.Minute * 3),
+	}
 	err := checkIfAlreadyRequested(authData)
 	if err != nil {
 		return err
