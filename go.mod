@@ -1,6 +1,8 @@
 module server
 
-go 1.18
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -8,8 +10,8 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	github.com/jinzhu/gorm v1.9.16
 	github.com/joho/godotenv v1.5.1
+	github.com/lmittmann/tint v1.0.4
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/stretchr/testify v1.8.4
 	github.com/ttacon/libphonenumber v1.2.1
