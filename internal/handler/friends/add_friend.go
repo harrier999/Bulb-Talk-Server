@@ -20,13 +20,12 @@ type AddFriendRequest struct {
 func AddFriend(w http.ResponseWriter, r *http.Request) {
 	logger := log.NewColorLog()
 
-	uid, err := authenticator.GetUserID(r)
+	user_id, err := authenticator.GetUserID(r)
 	if err != nil {
 		logger.Info("Error while getting user_id from context", "error", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user_id := uuid.MustParse(uid)
 	var AddFriendData AddFriendRequest
 	json.NewDecoder(r.Body).Decode(&AddFriendData)
 	if err := validAddFriendData(AddFriendData); err != nil {
