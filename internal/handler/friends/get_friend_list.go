@@ -9,6 +9,7 @@ import (
 	"server/pkg/log"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -44,7 +45,7 @@ func GetFriendList(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func getFriendListDB(user_id string) ([]orm.Friend, error) {
+func getFriendListDB(user_id uuid.UUID) ([]orm.Friend, error) {
 	postgresCleint := postgres_db.GetPostgresClient()
 	var friends []orm.Friend
 	if err := postgresCleint.Where("user_id = ?", user_id).Find(&friends).Error; err != nil {

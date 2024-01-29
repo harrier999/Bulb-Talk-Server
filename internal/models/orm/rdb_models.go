@@ -37,7 +37,9 @@ type Friend struct {
 }
 
 type Room struct {
-	gorm.Model
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 	RoomID   uuid.UUID `gorm:"primaryKey; type:uuid; not null; default:gen_random_uuid()"`
 	RoomName string    `gorm:"type:varchar(40);not null"`
 }
