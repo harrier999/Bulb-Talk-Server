@@ -18,6 +18,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type initialMessage struct {
+	RoomID string `json:"room_id"`
+	UserID string `json:"user_id"`
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -45,8 +50,25 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	room_id := r.Header.Get("room_id")
-	user_id := r.Header.Get("user_id")
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
+	// room_id := r.Header.Get("room_id")
+	// user_id := r.Header.Get("user_id")
+
+	var initialMessage initialMessage
+	err = json.Unmarshal(msg, &initialMessage)
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
+	room_id := initialMessage.RoomID
+	user_id := initialMessage.UserID
+	
 	log.Println("new connection from ", user_id)
 	log.Println("room_id is ", room_id)
 
