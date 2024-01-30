@@ -1,42 +1,40 @@
 package room
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 	"server/internal/db/postgres_db"
-	"server/internal/models/orm"
+	"server/pkg/authenticator"
+	"server/pkg/log"
+
 	"github.com/google/uuid"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	postgresClient := postgres_db.GetPostgresClient()
+type GetRoomListResponse struct {
+	RoomID   uuid.UUID `json:"room_id"`
+	RoomName string    `json:"room_name"`
+}
 
-	user, err := GetUserId(r.Header)
+func GetRoomListHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.NewColorLog()
+	user_id, err := authenticator.GetUserID(r)
 	if err != nil {
-		log.Println("Error getting user id. Error: ", err.Error())
+		logger.Error(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	roomUserList := []orm.RoomUserList{}
-	roomUser := orm.RoomUserList{}
-	roomUser.UserID = uuid.MustParse(user)
+	postgresClient := postgres_db.GetPostgresClient()
+	var roomList []GetRoomListResponse
+	postgresClient.Table("rooms").Select("rooms.room_id, rooms.room_name").
+		Joins("left join room_users on rooms.room_id = room_users.room_id").
+		Where("room_users.user_id = ?", user_id).Scan(&roomList)
 
-	postgresClient.Model(&orm.RoomUserList{}).Where(&roomUser).Find(&roomUserList)
-
-	result := encoder(roomUserList)
+	err = json.NewEncoder(w).Encode(roomList)
+	if err != nil {
+		logger.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(result)
-	
 }
-
-func encoder(roomUserList []orm.RoomUserList) []byte {
-	// TODO: implement encoder
-	return []byte{}
-}
-
-func GetUserId(header http.Header) (string, error) {
-	// TODO: implement jwt authorization
-	return header.Get("user_id"), nil
-}
-
