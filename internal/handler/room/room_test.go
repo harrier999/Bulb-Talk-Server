@@ -54,3 +54,15 @@ func TestCreateRoomNormalCase(t *testing.T) {
 	assert.Equal(t, 200, res.Code)
 	t.Logf("Response Body: %s", res.Body.String())
 }
+
+func TestGetRoomListNormalCase(t *testing.T) {
+	t.Log("Testing GetRoomList Normal Case")
+	r := tutils.CreateRouterWithMiddleware(GetRoomListHandler)
+	reqBody, _ := json.Marshal(createRoomRequest{[]uuid.UUID{_USER_1.UserID}})
+	req, res := tutils.CreateRequestAndResponse(reqBody)
+	req.Header.Set("Authorization", tutils.CreateToken(_USER_1.UserID))
+
+	r.ServeHTTP(res, req)
+	assert.Equal(t, 200, res.Code)
+	t.Logf("Response Body: %s", res.Body.String())
+}
