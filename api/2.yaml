@@ -1,0 +1,78 @@
+openapi: 3.0.0
+info:
+  title: Friends Management API
+  version: "1.0"
+servers:
+  - url: 'http://example.com/api'
+paths:
+  /auth/friend:
+    post:
+      summary: Add a new friend
+      description: Adds a new friend by phone number.
+      tags:
+        - Friends
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddFriendRequest'
+      responses:
+        '200':
+          description: Friend added successfully.
+        '400':
+          description: Bad request, invalid data.
+        '401':
+          description: Unauthorized, JWT token not found or invalid.
+        '500':
+          description: Internal server error.
+      security:
+        - bearerAuth: []
+
+  /auth/getfriend:
+    get:
+      summary: Get friend list
+      description: Retrieves the list of friends.
+      tags:
+        - Friends
+      responses:
+        '200':
+          description: Successfully retrieved friend list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FriendListResponse'
+        '401':
+          description: Unauthorized, JWT token not found or invalid.
+        '500':
+          description: Internal server error.
+      security:
+        - bearerAuth: []
+
+components:
+  schemas:
+    AddFriendRequest:
+      type: object
+      required:
+        - phone_number
+      properties:
+        phone_number:
+          type: string
+          example: "12345678901"
+
+    FriendListResponse:
+      type: object
+      properties:
+        friend_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Friend'
+
+    Friend:
+      type: object
+      properties:
+        user_id:
+          type: string
+        friend_id:
+          type: string
+        # Add additional properties for the Friend object here
