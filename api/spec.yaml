@@ -1,0 +1,48 @@
+openapi: 3.0.0
+info:
+  title: BulbTalk API
+  version: "1.0"
+servers:
+  - url: 'http://api.bulbtalk.com'
+paths:
+  /login:
+    post:
+      summary: User login
+      description: Login with phone number and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login, returns JWT token.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "jwt_token_here"
+        '400':
+          description: Bad request, invalid phone number or password.
+        '401':
+          description: Unauthorized, user verification failed.
+        '500':
+          description: Internal server error.
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - phone_number
+        - password
+      properties:
+        phone_number:
+          type: string
+          example: "12345678901"
+        password:
+          type: string
+          example: "yourpassword"

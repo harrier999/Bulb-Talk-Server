@@ -4,12 +4,14 @@ import (
 	"log"
 	"server/pkg/authenticator"
 
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
+	"net/http"
+	"server/internal/handler/chatting"
+	"server/internal/handler/friends"
 	"server/internal/handler/room"
 	"server/internal/handler/user"
-	"server/internal/handler/friends"
-	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -20,12 +22,11 @@ func main() {
 	}
 	r := mux.NewRouter()
 
-
-
 	r.HandleFunc("/signup", user.SignUp).Methods("POST")
 	r.HandleFunc("/login", user.Login).Methods("POST")
 	r.HandleFunc("/authenticate", user.RequestAuthNumber).Methods("POST")
 	r.HandleFunc("/checkauth", user.CheckAuthNumber).Methods("POST")
+	r.HandleFunc("/chat", chatting.Handler).Methods("GET")
 
 	authroizedRouter := r.PathPrefix("/auth").Subrouter()
 	authroizedRouter.Use(authenticator.JWTMiddleware)
@@ -35,8 +36,8 @@ func main() {
 	authroizedRouter.HandleFunc("/createrooms", room.CreateRoomHandler).Methods("POST")
 
 	port := ":18000"
-	
+
 	log.Println("Server is successfully running on port " + port)
-	log.Fatal(http.ListenAndServe(port, authroizedRouter))
-	
+	log.Fatal(http.ListenAndServe(port, r))
+
 }

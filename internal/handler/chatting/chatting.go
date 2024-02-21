@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 
 	"server/internal/models"
 	"server/internal/models/message"
@@ -26,6 +28,29 @@ type initialMessage struct {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		allowedHost := os.Getenv("ALLOWED_HOST")
+		log.Println("allowed host is ", allowedHost)
+		
+
+		// 요청의 오리진을 가져옴
+		origin := r.Header.Get("Origin")
+		if origin[:16] == "http://localhost" {
+			return true
+		}
+		log.Println("origin is ", origin)
+
+		if origin == "" {
+			return true
+		}
+
+		u, err := url.Parse(origin)
+		if err != nil {
+			return false
+		}
+		return true
+		return u.Host == allowedHost
+	},
 }
 
 func closeConnection(room_id string, user_id string) {
@@ -43,6 +68,7 @@ var ctx context.Context
 var redisDB *redis.Client
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("new connection")
 	ctx = redis_db.GetContext()
 	redisDB = redis_db.GetChattingHistoryClient()
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -68,7 +94,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	room_id := initialMessage.RoomID
 	user_id := initialMessage.UserID
-	
+
 	log.Println("new connection from ", user_id)
 	log.Println("room_id is ", room_id)
 
