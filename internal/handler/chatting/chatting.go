@@ -7,18 +7,17 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 
 	"server/internal/models"
 	"server/internal/models/message"
 
 	"github.com/gorilla/websocket"
-
-	//"github.com/jinzhu/gorm"
 	"server/internal/db/redis_db"
 
 	"github.com/redis/go-redis/v9"
 )
+
+var ALLOWED_ORIGIN_LIST = []string{"app.bulbtalk.com"}
 
 type initialMessage struct {
 	RoomID string `json:"room_id"`
@@ -29,27 +28,18 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		allowedHost := os.Getenv("ALLOWED_HOST")
-		log.Println("allowed host is ", allowedHost)
-		
-
-		// 요청의 오리진을 가져옴
 		origin := r.Header.Get("Origin")
-		if origin[:16] == "http://localhost" {
-			return true
-		}
-		log.Println("origin is ", origin)
-
-		if origin == "" {
-			return true
-		}
-
-		u, err := url.Parse(origin)
+		url, err := url.Parse(origin)
 		if err != nil {
+			log.Println(err)
 			return false
 		}
-		return true
-		return u.Host == allowedHost
+		for _, allowed_origin := range ALLOWED_ORIGIN_LIST {
+			if url.Host == allowed_origin {
+				return true
+			}
+		}
+		return false
 	},
 }
 
