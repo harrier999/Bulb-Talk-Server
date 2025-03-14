@@ -10,7 +10,7 @@ type User struct {
 }
 
 type JoinRoom struct {
-	room_id string
-	user_id string
+	room_id    string
+	user_id    string
 	message_id string
 }

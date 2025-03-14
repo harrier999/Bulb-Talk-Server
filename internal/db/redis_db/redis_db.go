@@ -2,37 +2,73 @@ package redis_db
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
+	"server/pkg/log"
 	"sync"
 
 	redis "github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
-var redisDB *redis.Client
-var once sync.Once
+type RedisInstance struct {
+	Client *redis.Client
+	Ctx    context.Context
+	logger *slog.Logger
+}
+
+var (
+	instance      *RedisInstance
+	instanceMutex sync.Mutex
+)
 
 func GetChattingHistoryClient() *redis.Client {
-	once.Do(func() {
-		log.Println("Connecting to redis...")
-		redis_addr := os.Getenv("REDIS_ADDR")
-		redis_password := os.Getenv("REDIS_PASS")
-		redisDB = redis.NewClient(&redis.Options{
-			Addr:     redis_addr,
-			Password: redis_password,
-			DB:       0,
-		})
-		_, err := redisDB.Ping(ctx).Result()
-		if err != nil {
-			log.Fatalln("Error connecting to redis. Error: ", err.Error())
-			panic(err.Error())
-		}
-	})
+	if instance == nil {
+		instanceMutex.Lock()
+		defer instanceMutex.Unlock()
 
-	return redisDB
+		if instance == nil {
+			instance = &RedisInstance{
+				Ctx:    context.Background(),
+				logger: log.NewColorLog(),
+			}
+			instance.connect()
+		}
+	}
+
+	return instance.Client
 }
 
 func GetContext() context.Context {
-	return ctx
+	if instance == nil {
+		GetChattingHistoryClient()
+	}
+	return instance.Ctx
+}
+
+func (r *RedisInstance) connect() {
+	r.logger.Info("Connecting to Redis...")
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	redisPassword := os.Getenv("REDIS_PASS")
+
+	r.Client = redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPassword,
+		DB:       0,
+	})
+
+	_, err := r.Client.Ping(r.Ctx).Result()
+	if err != nil {
+		r.logger.Error("Error connecting to Redis", "error", err.Error())
+		os.Exit(1)
+	}
+
+	r.logger.Info("Successfully connected to Redis")
+}
+
+func CloseConnection() error {
+	if instance != nil && instance.Client != nil {
+		return instance.Client.Close()
+	}
+	return nil
 }
