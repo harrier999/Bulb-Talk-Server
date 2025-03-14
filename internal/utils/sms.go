@@ -85,7 +85,7 @@ func (tm *tokenManager) startRefreshRoutine(refreshInterval time.Duration) {
 			}
 			n = 0
 			var _ string
-			_ = <-tm.tokenChannel // Throw away old token
+			_ = <-tm.tokenChannel
 			tm.tokenChannel <- newToken
 			time.Sleep(refreshInterval)
 		}

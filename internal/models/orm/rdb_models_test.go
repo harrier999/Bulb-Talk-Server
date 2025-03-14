@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
-
 func TestMigration(t *testing.T) {
 	err := godotenv.Load("../../../cmd/talk-server/.env")
 	if err != nil {
@@ -41,12 +39,5 @@ func TestMigration(t *testing.T) {
 
 	assert.Equal(t, room1, room3)
 	assert.Equal(t, room2, room4)
-
-	// roomList := []orm.RoomList{}
-	// db.Find(&roomList).Scan(&roomList)
-	// for _, room := range roomList {
-	// 	t.Logf("Room: %s", room.RoomID.String())
-	// 	fmt.Printf("Room: %s\n", room.RoomID.String())
-	// }
 
 }
