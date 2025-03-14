@@ -26,7 +26,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	token, err := authenticator.CreateToken(user.UserID.String(), 24*14)
+	token, err := authenticator.CreateToken(user.ID.String(), 24*14)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

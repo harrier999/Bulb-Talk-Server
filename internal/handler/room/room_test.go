@@ -16,13 +16,11 @@ var (
 		UserName:    "test",
 		PhoneNumber: "01012345678",
 		CountryCode: "82",
-		UserID:      uuid.New(),
 	}
 	_USER_2 = orm.User{
 		UserName:    "test2",
 		PhoneNumber: "01022222222",
 		CountryCode: "82",
-		UserID:      uuid.New(),
 	}
 	_ROOM_1 = orm.Room{
 		RoomName: "test",
@@ -46,9 +44,9 @@ func TestMain(m *testing.M) {
 func TestCreateRoomNormalCase(t *testing.T) {
 	t.Log("Test Create Room Normal Case")
 	r := tutils.CreateRouterWithMiddleware(CreateRoomHandler)
-	reqBody, _ := json.Marshal(createRoomRequest{[]uuid.UUID{_USER_2.UserID}})
+	reqBody, _ := json.Marshal(createRoomRequest{[]uuid.UUID{_USER_2.ID}})
 	req, res := tutils.CreateRequestAndResponse(reqBody)
-	req.Header.Set("Authorization", tutils.CreateToken(_USER_1.UserID))
+	req.Header.Set("Authorization", tutils.CreateToken(_USER_1.ID))
 
 	r.ServeHTTP(res, req)
 	assert.Equal(t, 200, res.Code)
@@ -59,7 +57,7 @@ func TestGetRoomListNormalCase(t *testing.T) {
 	t.Log("Test Get Room List Normal Case")
 	r := tutils.CreateRouterWithMiddleware(GetRoomListHandler)
 	req, res := tutils.CreateRequestAndResponse(nil)
-	req.Header.Set("Authorization", tutils.CreateToken(_USER_1.UserID))
+	req.Header.Set("Authorization", tutils.CreateToken(_USER_1.ID))
 
 	r.ServeHTTP(res, req)
 	assert.Equal(t, 200, res.Code)

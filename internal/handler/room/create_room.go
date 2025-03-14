@@ -60,7 +60,7 @@ func createRoom(room_user_list []uuid.UUID) (uuid.UUID, error) {
 	if tx.Error != nil {
 		return uuid.Nil, tx.Error
 	}
-	room_id := room.RoomID
+	room_id := room.ID
 	room_user_objects := make([]orm.RoomUser, len(room_user_list))
 	for i, user_id := range room_user_list {
 		room_user_objects[i] = orm.RoomUser{RoomID: room_id, UserID: user_id}

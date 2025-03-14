@@ -29,9 +29,9 @@ func TestMigration(t *testing.T) {
 	db.Create(&room2)
 
 	room3 := orm.Room{}
-	room3.RoomID = room1.RoomID
+	room3.ID = room1.ID
 	room4 := orm.Room{}
-	room4.RoomID = room2.RoomID
+	room4.ID = room2.ID
 
 	db.First(&room3)
 	db.First(&room4)

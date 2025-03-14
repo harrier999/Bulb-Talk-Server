@@ -92,7 +92,7 @@ func getUserIDByPhoneNumber(phoneNumber string) (uuid.UUID, error) {
 		}
 		return uuid.UUID{}, result.Error
 	}
-	return user.UserID, nil
+	return user.ID, nil
 }
 
 func checkIfFriendExists(user_id uuid.UUID, friend_id uuid.UUID) bool {
