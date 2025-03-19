@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Bulb Talk Logo](https://via.placeholder.com/200x200.png?text=Bulb+Talk)
+<img src="assets/img/main_page.png" alt="Bulb Talk Main Page" width="45%"> <img src="assets/img/chatting_rooms.png" alt="Bulb Talk Chatting Rooms" width="45%">
 
 **A modern, real-time chat platform built with Go**
 
@@ -164,15 +164,9 @@ This will start the server along with PostgreSQL and Redis containers.
    # Edit .env file with your configuration
    ```
 
-<<<<<<< Updated upstream
-3. Run the application:
-   ```
-   cd cmd/talk-server
-=======
 4. Run the application:
    ```bash
    cd cmd/talk-server
->>>>>>> Stashed changes
    go run main.go
    ```
 
