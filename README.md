@@ -9,7 +9,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.18+-00ADD8.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[Live Demo](https://talk.wasabi-labs.com) • [API Documentation](API_WebSocket_Documentation.md) • [Report Bug](https://github.com/yourusername/bulb-talk/issues)
+[Live Demo](https://talk.wasabi-labs.com) • [API Documentation](API_docs.md) • [Report Bug](https://github.com/harrier999/bulb-talk-server/issues)
 
 </div>
 
