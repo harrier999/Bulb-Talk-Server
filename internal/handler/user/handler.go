@@ -21,8 +21,27 @@ func NewHandler(userService service.UserService, authService service.AuthService
 type SignUpRequest struct {
 	UserName    string `json:"username"`
 	Password    string `json:"password"`
-	PhoneNumber string `json:"phone_number"`
-	CountryCode string `json:"country_code"`
+	PhoneNumber string `json:"phoneNumber"`
+	CountryCode string `json:"countryCode"`
+}
+
+type SuccessResponse struct {
+	Success bool `json:"success"`
+}
+
+type UserResponse struct {
+	Success bool        `json:"success"`
+	User    interface{} `json:"user"`
+}
+
+type TokenResponse struct {
+	Success bool   `json:"success"`
+	Token   string `json:"token"`
+}
+
+type VerifiedResponse struct {
+	Success  bool `json:"success"`
+	Verified bool `json:"verified"`
 }
 
 func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -45,11 +64,11 @@ func (h *Handler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(UserResponse{Success: true, User: user})
 }
 
 type LoginRequest struct {
-	PhoneNumber string `json:"phone_number"`
+	PhoneNumber string `json:"phoneNumber"`
 	Password    string `json:"password"`
 }
 
@@ -73,13 +92,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(token)
+	json.NewEncoder(w).Encode(TokenResponse{Success: true, Token: token})
 }
 
 type AuthNumberRequest struct {
-	PhoneNumber string `json:"phone_number"`
-	CountryCode string `json:"country_code"`
-	DeviceID    string `json:"device_id"`
+	PhoneNumber string `json:"phoneNumber"`
+	CountryCode string `json:"countryCode"`
+	DeviceID    string `json:"deviceId"`
 }
 
 func (h *Handler) RequestAuthNumber(w http.ResponseWriter, r *http.Request) {
@@ -100,14 +119,15 @@ func (h *Handler) RequestAuthNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }
 
 type CheckAuthRequest struct {
-	PhoneNumber string `json:"phone_number"`
-	CountryCode string `json:"country_code"`
-	DeviceID    string `json:"device_id"`
-	AuthNumber  string `json:"auth_number"`
+	PhoneNumber string `json:"phoneNumber"`
+	CountryCode string `json:"countryCode"`
+	DeviceID    string `json:"deviceId"`
+	AuthNumber  string `json:"authNumber"`
 }
 
 func (h *Handler) CheckAuthNumber(w http.ResponseWriter, r *http.Request) {
@@ -133,5 +153,6 @@ func (h *Handler) CheckAuthNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(VerifiedResponse{Success: true, Verified: true})
 }
