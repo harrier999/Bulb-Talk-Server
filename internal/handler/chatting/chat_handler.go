@@ -5,12 +5,23 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"server/internal/models/message"
 	"server/internal/service"
+	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
-var ALLOWED_ORIGIN_LIST = []string{"app.bulbtalk.com"}
+// 환경 변수에서 허용된 오리진 목록을 가져옵니다
+func getAllowedOrigins() []string {
+	allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
+	if allowedOriginsStr == "" {
+		return []string{} // 기본값 없음
+	}
+	return strings.Split(allowedOriginsStr, ",")
+}
 
 type ChatHandler struct {
 	chatService service.ChatService
@@ -27,23 +38,58 @@ var WebSocketUpgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		url, err := url.Parse(origin)
+		if origin == "" {
+			return true // 개발 환경에서는 Origin이 없는 요청도 허용
+		}
+
+		parsedURL, err := url.Parse(origin)
 		if err != nil {
-			log.Println(err)
+			log.Println("Error parsing origin:", err)
 			return false
 		}
-		for _, allowed_origin := range ALLOWED_ORIGIN_LIST {
-			if url.Host == allowed_origin {
+
+		allowedOrigins := getAllowedOrigins()
+
+		// '*'가 허용된 오리진 목록에 있으면 모든 오리진 허용
+		for _, allowedOrigin := range allowedOrigins {
+			if strings.TrimSpace(allowedOrigin) == "*" {
 				return true
 			}
 		}
+
+		// 로컬호스트 확인 (디버깅 용도)
+		host := parsedURL.Host
+		if strings.HasPrefix(host, "localhost") ||
+			strings.HasPrefix(host, "127.0.0.1") ||
+			strings.HasSuffix(host, ".localhost") {
+			return true
+		}
+
+		if len(allowedOrigins) == 0 {
+			return true // 허용된 오리진이 없으면 모든 오리진 허용 (개발 환경용)
+		}
+
+		// 명시적으로 허용된 도메인 확인
+		for _, allowedOrigin := range allowedOrigins {
+			// 와일드카드 도메인 처리 (*.example.com)
+			if strings.HasPrefix(allowedOrigin, "*.") {
+				suffix := allowedOrigin[1:] // "*."를 제거
+				if strings.HasSuffix(parsedURL.Host, suffix) {
+					return true
+				}
+			} else if parsedURL.Host == allowedOrigin {
+				return true
+			}
+		}
+
+		log.Printf("Rejected WebSocket connection from origin: %s", origin)
 		return false
 	},
 }
 
 type initialMessage struct {
-	RoomID string `json:"room_id"`
-	UserID string `json:"user_id"`
+	RoomID string `json:"roomId"`
+	UserID string `json:"userId"`
 }
 
 func (h *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -82,30 +128,47 @@ func (h *ChatHandler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type MessageResponse struct {
+	Success  bool              `json:"success"`
+	Messages []message.Message `json:"messages"`
+}
+
 func (h *ChatHandler) GetMessages(w http.ResponseWriter, r *http.Request) {
-	roomID := r.URL.Query().Get("room_id")
+	roomID := r.URL.Query().Get("roomId")
 	if roomID == "" {
 		http.Error(w, "Missing room ID", http.StatusBadRequest)
 		return
 	}
 
-	lastMessageIDStr := r.URL.Query().Get("last_message_id")
-	var lastMessageID int64 = 0
-	if lastMessageIDStr != "" {
-		var err error
-		lastMessageID, err = json.Number(lastMessageIDStr).Int64()
-		if err != nil {
-			http.Error(w, "Invalid last message ID", http.StatusBadRequest)
-			return
+	var messages []message.Message
+	var err error
+
+	lastMessageUUIDStr := r.URL.Query().Get("lastMessageId")
+	if lastMessageUUIDStr != "" {
+		// UUID 기반 조회
+		lastMessageUUID, uuidErr := uuid.Parse(lastMessageUUIDStr)
+		if uuidErr != nil {
+			// UUID 파싱 실패 시 숫자 ID로 시도
+			var lastMessageID int64 = 0
+			lastMessageID, numErr := json.Number(lastMessageUUIDStr).Int64()
+			if numErr != nil {
+				http.Error(w, "Invalid last message ID", http.StatusBadRequest)
+				return
+			}
+			messages, err = h.chatService.GetMessages(r.Context(), roomID, lastMessageID)
+		} else {
+			messages, err = h.chatService.GetMessagesByUUID(r.Context(), roomID, lastMessageUUID)
 		}
+	} else {
+		// 모든 메시지 조회
+		messages, err = h.chatService.GetMessages(r.Context(), roomID, 0)
 	}
 
-	messages, err := h.chatService.GetMessages(r.Context(), roomID, lastMessageID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(messages)
+	json.NewEncoder(w).Encode(MessageResponse{Success: true, Messages: messages})
 }

@@ -5,8 +5,14 @@ import (
 	"encoding/json"
 	"server/internal/models/message"
 	"server/internal/repository"
+	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+)
+
+const (
+	maxStreamLength = 5000
 )
 
 type RedisMessageRepository struct {
@@ -25,33 +31,51 @@ func (r *RedisMessageRepository) SaveMessage(ctx context.Context, roomID string,
 		return err
 	}
 
-	err = r.client.RPush(ctx, "room:"+roomID+":messages", string(msgJSON)).Err()
+	streamKey := "stream:room:" + roomID + ":messages"
+
+	var msgID uuid.UUID
+
+	if baseMsg, ok := msg.(*message.BaseMessage); ok {
+		msgID = baseMsg.Id
+	}
+
+	if msgID == uuid.Nil {
+		msgID, _ = uuid.NewV7()
+	}
+
+	_, err = r.client.XAdd(ctx, &redis.XAddArgs{
+		Stream: streamKey,
+		ID:     msgID.String(),
+		Values: map[string]interface{}{
+			"message": string(msgJSON),
+		},
+	}).Result()
+
 	if err != nil {
 		return err
 	}
+
+	r.client.XTrimMaxLen(ctx, streamKey, maxStreamLength)
 
 	return nil
 }
 
 func (r *RedisMessageRepository) GetMessages(ctx context.Context, roomID string, lastMessageID int64) ([]message.Message, error) {
+	streamKey := "stream:room:" + roomID + ":messages"
 
-	redisKey := "room:" + roomID + ":messages"
-
-	var redisList []string
-	var err error
-
+	var start string
 	if lastMessageID <= 0 {
-		redisList, err = r.client.LRange(ctx, redisKey, 0, -1).Result()
+		start = "-"
 	} else {
-
-		redisList, err = r.client.LRange(ctx, redisKey, lastMessageID, -1).Result()
+		start = "(" + strconv.FormatInt(lastMessageID, 10)
 	}
 
+	streams, err := r.client.XRange(ctx, streamKey, start, "+").Result()
 	if err != nil {
 		return nil, err
 	}
 
-	messages, err := r.redisListToMessageList(redisList)
+	messages, err := r.redisStreamToMessageList(streams)
 	if err != nil {
 		return nil, err
 	}
@@ -59,16 +83,45 @@ func (r *RedisMessageRepository) GetMessages(ctx context.Context, roomID string,
 	return messages, nil
 }
 
-func (r *RedisMessageRepository) redisListToMessageList(redisList []string) ([]message.Message, error) {
-	messages := make([]message.Message, 0, len(redisList))
+func (r *RedisMessageRepository) redisStreamToMessageList(streams []redis.XMessage) ([]message.Message, error) {
+	messages := make([]message.Message, 0, len(streams))
 
-	for _, item := range redisList {
-		var msg message.Message
-		err := json.Unmarshal([]byte(item), &msg)
+	for _, stream := range streams {
+		msgStr, ok := stream.Values["message"].(string)
+		if !ok {
+			continue
+		}
+
+		var baseMsg message.BaseMessage
+		err := json.Unmarshal([]byte(msgStr), &baseMsg)
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, msg)
+
+		messages = append(messages, &baseMsg)
+	}
+
+	return messages, nil
+}
+
+func (r *RedisMessageRepository) GetMessagesByUUID(ctx context.Context, roomID string, lastMessageUUID uuid.UUID) ([]message.Message, error) {
+	streamKey := "stream:room:" + roomID + ":messages"
+
+	var start string
+	if lastMessageUUID == uuid.Nil {
+		start = "-"
+	} else {
+		start = "(" + lastMessageUUID.String()
+	}
+
+	streams, err := r.client.XRange(ctx, streamKey, start, "+").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := r.redisStreamToMessageList(streams)
+	if err != nil {
+		return nil, err
 	}
 
 	return messages, nil

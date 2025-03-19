@@ -36,6 +36,7 @@ type RoomRepository interface {
 type MessageRepository interface {
 	SaveMessage(ctx context.Context, roomID string, msg message.Message) error
 	GetMessages(ctx context.Context, roomID string, lastMessageID int64) ([]message.Message, error)
+	GetMessagesByUUID(ctx context.Context, roomID string, lastMessageUUID uuid.UUID) ([]message.Message, error)
 }
 
 type AuthRepository interface {

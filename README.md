@@ -64,7 +64,7 @@ The application follows SOLID principles:
 
 3. Run the application:
    ```
-   cd cmd/solid-server
+   cd cmd/talk-server
    go run main.go
    ```
 

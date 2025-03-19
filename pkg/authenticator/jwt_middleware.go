@@ -17,6 +17,12 @@ var hmacSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method == "OPTIONS" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		tokenString := r.Header.Get("Authorization")
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

@@ -8,6 +8,7 @@ import (
 	"server/pkg/authenticator"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type Handler struct {
@@ -21,11 +22,11 @@ func NewHandler(friendService service.FriendService) *Handler {
 }
 
 type FriendListResponse struct {
-	FriendList []orm.Friend `json:"friend_list"`
+	Success    bool         `json:"success"`
+	FriendList []orm.Friend `json:"friendList"`
 }
 
 func (h *Handler) GetFriendList(w http.ResponseWriter, r *http.Request) {
-
 	userID, err := authenticator.GetUserID(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -39,11 +40,15 @@ func (h *Handler) GetFriendList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(FriendListResponse{FriendList: friendList})
+	json.NewEncoder(w).Encode(FriendListResponse{Success: true, FriendList: friendList})
 }
 
 type AddFriendRequest struct {
-	PhoneNumber string `json:"phone_number"`
+	PhoneNumber string `json:"phoneNumber"`
+}
+
+type SuccessResponse struct {
+	Success bool `json:"success"`
 }
 
 func (h *Handler) AddFriend(w http.ResponseWriter, r *http.Request) {
@@ -71,77 +76,74 @@ func (h *Handler) AddFriend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }
 
 type BlockFriendRequest struct {
-	FriendID string `json:"friend_id"`
+	FriendID string `json:"friendId"`
 }
 
 func (h *Handler) BlockFriend(w http.ResponseWriter, r *http.Request) {
-
 	userID, err := authenticator.GetUserID(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	var req BlockFriendRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	// URL에서 friendId 파라미터 추출
+	vars := mux.Vars(r)
+	friendID := vars["friendId"]
 
-	if req.FriendID == "" {
+	if friendID == "" {
 		http.Error(w, "Missing friend ID", http.StatusBadRequest)
 		return
 	}
 
-	friendID, err := uuid.Parse(req.FriendID)
+	friendUUID, err := uuid.Parse(friendID)
 	if err != nil {
 		http.Error(w, "Invalid friend ID", http.StatusBadRequest)
 		return
 	}
 
-	err = h.friendService.BlockFriend(r.Context(), userID, friendID)
+	err = h.friendService.BlockFriend(r.Context(), userID, friendUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }
 
 func (h *Handler) UnblockFriend(w http.ResponseWriter, r *http.Request) {
-
 	userID, err := authenticator.GetUserID(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	var req BlockFriendRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	// URL에서 friendId 파라미터 추출
+	vars := mux.Vars(r)
+	friendID := vars["friendId"]
 
-	if req.FriendID == "" {
+	if friendID == "" {
 		http.Error(w, "Missing friend ID", http.StatusBadRequest)
 		return
 	}
 
-	friendID, err := uuid.Parse(req.FriendID)
+	friendUUID, err := uuid.Parse(friendID)
 	if err != nil {
 		http.Error(w, "Invalid friend ID", http.StatusBadRequest)
 		return
 	}
 
-	err = h.friendService.UnblockFriend(r.Context(), userID, friendID)
+	err = h.friendService.UnblockFriend(r.Context(), userID, friendUUID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }

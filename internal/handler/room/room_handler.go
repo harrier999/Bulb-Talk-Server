@@ -8,6 +8,7 @@ import (
 	"server/pkg/authenticator"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type Handler struct {
@@ -21,11 +22,11 @@ func NewHandler(roomService service.RoomService) *Handler {
 }
 
 type RoomListResponse struct {
-	Rooms []orm.Room `json:"rooms"`
+	Success bool       `json:"success"`
+	Rooms   []orm.Room `json:"rooms"`
 }
 
 func (h *Handler) GetRoomList(w http.ResponseWriter, r *http.Request) {
-
 	userID, err := authenticator.GetUserID(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -39,16 +40,21 @@ func (h *Handler) GetRoomList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(RoomListResponse{Rooms: rooms})
+	json.NewEncoder(w).Encode(RoomListResponse{Success: true, Rooms: rooms})
 }
 
 type CreateRoomRequest struct {
-	RoomName string      `json:"room_name"`
-	Users    []uuid.UUID `json:"room_user_list"`
+	RoomName string      `json:"roomName"`
+	Users    []uuid.UUID `json:"roomUserList"`
+}
+
+type SuccessResponse struct {
+	Success bool `json:"success"`
 }
 
 type CreateRoomResponse struct {
-	RoomID uuid.UUID `json:"room_id"`
+	Success bool      `json:"success"`
+	RoomID  uuid.UUID `json:"roomId"`
 }
 
 func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
@@ -80,37 +86,46 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(CreateRoomResponse{RoomID: room.ID})
+	json.NewEncoder(w).Encode(CreateRoomResponse{Success: true, RoomID: room.ID})
 }
 
 type AddUserRequest struct {
-	RoomID string `json:"room_id"`
-	UserID string `json:"user_id"`
+	UserID string `json:"userId"`
 }
 
 func (h *Handler) AddUser(w http.ResponseWriter, r *http.Request) {
-
 	if _, err := authenticator.GetUserID(r); err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
+	// URL에서 roomId 파라미터 추출
+	vars := mux.Vars(r)
+	roomIDStr := vars["roomId"]
+
+	if roomIDStr == "" {
+		http.Error(w, "Missing room ID", http.StatusBadRequest)
+		return
+	}
+
+	roomID, err := uuid.Parse(roomIDStr)
+	if err != nil {
+		http.Error(w, "Invalid room ID", http.StatusBadRequest)
+		return
+	}
+
+	// 요청 본문에서 userId 추출
 	var req AddUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if req.RoomID == "" || req.UserID == "" {
-		http.Error(w, "Missing room ID or user ID", http.StatusBadRequest)
+	if req.UserID == "" {
+		http.Error(w, "Missing user ID", http.StatusBadRequest)
 		return
 	}
 
-	roomID, err := uuid.Parse(req.RoomID)
-	if err != nil {
-		http.Error(w, "Invalid room ID", http.StatusBadRequest)
-		return
-	}
 	targetUserID, err := uuid.Parse(req.UserID)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -123,12 +138,8 @@ func (h *Handler) AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-}
-
-type RemoveUserRequest struct {
-	RoomID string `json:"room_id"`
-	UserID string `json:"user_id"`
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }
 
 func (h *Handler) RemoveUser(w http.ResponseWriter, r *http.Request) {
@@ -137,23 +148,23 @@ func (h *Handler) RemoveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req RemoveUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
+	// URL에서 roomId와 userId 파라미터 추출
+	vars := mux.Vars(r)
+	roomIDStr := vars["roomId"]
+	userIDStr := vars["userId"]
 
-	if req.RoomID == "" || req.UserID == "" {
+	if roomIDStr == "" || userIDStr == "" {
 		http.Error(w, "Missing room ID or user ID", http.StatusBadRequest)
 		return
 	}
 
-	roomID, err := uuid.Parse(req.RoomID)
+	roomID, err := uuid.Parse(roomIDStr)
 	if err != nil {
 		http.Error(w, "Invalid room ID", http.StatusBadRequest)
 		return
 	}
-	targetUserID, err := uuid.Parse(req.UserID)
+
+	targetUserID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
@@ -165,5 +176,6 @@ func (h *Handler) RemoveUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(SuccessResponse{Success: true})
 }
