@@ -174,7 +174,7 @@ The server will start on port 18000 by default.
 
 ## 📚 API Endpoints
 
-Bulb Talk provides a comprehensive RESTful API. For detailed documentation, see [API_WebSocket_Documentation.md](API_WebSocket_Documentation.md).
+Bulb Talk provides a comprehensive RESTful API. For detailed documentation, see [API_docs.md](API_docs.md).
 
 ### Public Endpoints
 
